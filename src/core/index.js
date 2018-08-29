@@ -20,8 +20,8 @@ const EventEmitter = require('events')
 const config = require('./config')
 const boot = require('./boot')
 const components = require('./components')
-const IPNS = require('./ipns')
 // replaced by repo-browser when running in the browser
+// const IPNS = require('./ipns')
 const defaultRepo = require('./runtime/repo-nodejs')
 const preload = require('./preload')
 const mfsPreload = require('./mfs-preload')
@@ -90,7 +90,8 @@ class IPFS extends EventEmitter {
     this._pubsub = undefined
     this._preload = preload(this)
     this._mfsPreload = mfsPreload(this)
-    this._ipns = new IPNS(null, this)
+    // this._ipns = new IPNS(null, this)
+    this._ipns = undefined
 
     // IPFS Core exposed components
     //   - for booting up a node
@@ -127,6 +128,9 @@ class IPFS extends EventEmitter {
 
     if (this._options.EXPERIMENTAL.pubsub) {
       this.log('EXPERIMENTAL pubsub is enabled')
+    }
+    if (this._options.EXPERIMENTAL.ipnsPubsub) {
+      this.log('EXPERIMENTAL IPNS pubsub is enabled')
     }
     if (this._options.EXPERIMENTAL.sharding) {
       this.log('EXPERIMENTAL sharding is enabled')

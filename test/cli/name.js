@@ -33,7 +33,7 @@ describe('name', () => {
     df.spawn({
       exec: `./src/cli/bin.js`,
       config: {},
-      args: pass.split(' '),
+      args: ['--pass', passPhrase, '--local'],
       initOptions: { bits: 512 }
     }, (err, _ipfsd) => {
       expect(err).to.not.exist()

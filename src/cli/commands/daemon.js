@@ -25,6 +25,10 @@ module.exports = {
         type: 'boolean',
         default: false
       })
+      .option('enable-namesys-pubsub', {
+        type: 'boolean',
+        default: false
+      })
   },
 
   handler (argv) {

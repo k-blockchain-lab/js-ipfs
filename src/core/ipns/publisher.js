@@ -108,8 +108,8 @@ class IpnsPublisher {
       return callback(err)
     }
 
-    // TODO Routing - this should be replaced by a put to the DHT
-    this._repo.datastore.put(key, rec.serialize(), (err, res) => {
+    // Add record to routing
+    this._routing.put(key, rec.serialize(), (err, res) => {
       if (err) {
         const errMsg = `ipns record for ${key.toString()} could not be stored in the routing`
 
@@ -146,8 +146,8 @@ class IpnsPublisher {
       return callback(err)
     }
 
-    // TODO Routing - this should be replaced by a put to the DHT
-    this._repo.datastore.put(key, rec.serialize(), (err, res) => {
+    // Add public key to routing
+    this._routing.put(key, rec.serialize(), (err, res) => {
       if (err) {
         const errMsg = `public key for ${key.toString()} could not be stored in the routing`
 

@@ -54,16 +54,12 @@ class IpnsResolver {
     }
 
     // Get the intended resoulver function
-    // TODO Routing - set default resolverFn
-
     let resolverFn
 
     if (local) {
-      resolverFn = this._resolveLocal
-    }
-
-    if (!resolverFn) {
-      return callback(new Error('not implemented yet'))
+      resolverFn = this._resolveOffline
+    } else {
+      resolverFn = this._resolveOnline
     }
 
     this.resolver(key, depth, peerId, resolverFn, (err, res) => {
@@ -106,8 +102,54 @@ class IpnsResolver {
     })
   }
 
+  // resolve ipns entries from the provided routing
+  _resolveOnline (name, peerId, callback) {
+    const { ipnsKey } = ipns.getIdKeys(fromB58String(name))
+
+    // TODO get public key from routing
+    // https://github.com/ipfs/go-ipfs/blob/master/namesys/routing.go#L70
+    // https://github.com/libp2p/go-libp2p-routing/blob/master/routing.go#L99
+
+    this._routing.get(ipnsKey, (err, res) => {
+      if (err) {
+        const errMsg = `record requested was not found for ${name} (${ipnsKey}) in the network`
+
+        log.error(errMsg)
+        return callback(errcode(new Error(errMsg), 'ERR_NO_NETWORK_RECORD_FOUND'))
+      }
+
+      if (!Buffer.isBuffer(res)) {
+        const errMsg = `found ipns record that we couldn't convert to a value`
+
+        log.error(errMsg)
+        return callback(errcode(new Error(errMsg), 'ERR_INVALID_RECORD_RECEIVED'))
+      }
+
+      const record = Record.deserialize(res)
+      const ipnsEntry = ipns.unmarshal(record.value)
+
+      // TODO several things
+      // https://github.com/ipfs/go-ipfs/blob/master/namesys/routing.go#L93
+
+      ipns.extractPublicKey(peerId, ipnsEntry, (err, pubKey) => {
+        if (err) {
+          return callback(err)
+        }
+
+        // Record validation
+        ipns.validate(pubKey, ipnsEntry, (err) => {
+          if (err) {
+            return callback(err)
+          }
+
+          callback(null, ipnsEntry.value.toString())
+        })
+      })
+    })
+  }
+
   // resolve ipns entries locally using the datastore
-  _resolveLocal (name, peerId, callback) {
+  _resolveOffline (name, peerId, callback) {
     const { ipnsKey } = ipns.getIdKeys(fromB58String(name))
 
     this._repo.datastore.get(ipnsKey, (err, dsVal) => {

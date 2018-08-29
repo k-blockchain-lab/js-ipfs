@@ -2,8 +2,13 @@
 
 const series = require('async/series')
 const Bitswap = require('ipfs-bitswap')
+const get = require('lodash/get')
 const setImmediate = require('async/setImmediate')
 const promisify = require('promisify-es6')
+const TieredStore = require('datastore-core').TieredDatastore
+
+const IPNS = require('../ipns')
+const DatastorePubsub = require('../ipns/datastore-pubsub')
 
 module.exports = (self) => {
   return promisify((callback) => {
@@ -34,6 +39,26 @@ module.exports = (self) => {
       },
       (cb) => self.libp2p.start(cb),
       (cb) => {
+        // Setup online routing for IPNS with a tiered routing composed by a DHT and a Pubsub router (if properly enabled)
+        const stores = []
+
+        // Add IPNS pubsub if enabled
+        if (get(self._options, 'EXPERIMENTAL.ipnsPubsub', false)) {
+          // const floodSub = self._libp2pNode._floodSub // TODO should be floodsub?
+          const pubsub = self._libp2pNode.pubsub
+          const localDatastore = self._repo.datastore
+          const peerId = self._peerInfo.id
+          const datastorePubsub = new DatastorePubsub(pubsub, localDatastore, peerId)
+
+          stores.push(datastorePubsub)
+        }
+
+        // NOTE: For now, the DHT is being replaced by the local repo datastore
+        stores.push(self._repo.datastore)
+
+        const routing = new TieredStore(stores)
+        self._ipns = new IPNS(routing, self)
+
         self._bitswap = new Bitswap(
           self._libp2pNode,
           self._repo.blocks,

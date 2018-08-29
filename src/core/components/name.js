@@ -11,6 +11,7 @@ const errcode = require('err-code')
 const log = debug('jsipfs:name')
 log.error = debug('jsipfs:name:error')
 
+const namePubsub = require('./name-pubsub')
 const utils = require('../utils')
 const path = require('../ipns/path')
 
@@ -128,7 +129,7 @@ module.exports = function name (self) {
       const nocache = options.nocache && options.nocache.toString() === 'true'
       const recursive = options.recursive && options.recursive.toString() === 'true'
 
-      const local = true // TODO ROUTING - use self._options.local
+      const local = self._options.local
 
       if (!self.isOnline() && !local) {
         const errMsg = utils.OFFLINE_ERROR
@@ -162,6 +163,7 @@ module.exports = function name (self) {
       }
 
       self._ipns.resolve(name, self._peerInfo.id, resolveOptions, callback)
-    })
+    }),
+    pubsub: namePubsub(self)
   }
 }
